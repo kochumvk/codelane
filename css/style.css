@@ -1,0 +1,20 @@
+#lane_holder{
+  float: left;
+  display: block;
+  width:100px;
+  height:800px;
+  border:1px solid #E4E4E4;
+  margin:0;
+  padding:0;
+}
+
+#message_holder{
+  margin-right: 200px;
+  margin-top: 200px;
+  float: right;
+  width: 400px;
+  height: 200px;
+  font-size: 48px;
+  font-family: "Ubuntu Condensed";
+  color: #4A90E2;
+}
