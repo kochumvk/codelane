@@ -1,5 +1,9 @@
 # Codelane
+
 Component to for interactive code navigation lanes
+
+![Alt text](https://raw.githubusercontent.com/kochumvk/codelane/master/images/sample.png)
+
 
 # Usage
 Create a new codeLane instance
