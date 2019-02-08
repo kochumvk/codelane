@@ -229,7 +229,6 @@ function handleMouseEnter(event) {
 function handleMarkerClick(event){
  var data = event.target.data;
      callBacks.click.call(this,data.loc);
-     document.getElementById("message_holder").innerHTML = "Navigate Code to line "+data.loc;
      var fillColor = event.target.data.color.stroke;
      var dummy_marker = new createjs.Shape();
      switch(event.target.data.shape) {
