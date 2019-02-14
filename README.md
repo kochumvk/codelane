@@ -8,7 +8,7 @@ Component to for interactive code navigation lanes
 # Usage
 Create a new codeLane instance
 
-var cl = new codeLane("lane_holder",100,800,data);
+var cl = new codeLane("lane_holder",100,800,data,custom_options);
 
 Where:
 
@@ -21,6 +21,21 @@ data is formatted data
 To navigate the code to appropriate lines on click of markers.
 
 cl.onClick(function (loc) {console.log("Navigate code to :"+loc) });
+
+# Advanced Customisation options
+ Using the custom_options arhument, you can tailor CodeLane to suit your requirements.
+ custom_options should be passed as final argument to codeLane() constructor.
+
+Example custom_options object:
+
+ {
+  zoom:{enable:true,wedgeHeight:50,targetHeight:100},
+  marker:{size:10},
+  blade:{height:120,width:20,fontSize:11,fontFamily:"Ubuntu Condensed"},
+  lane:{width:20,trackColor:"",thickness:""},
+  graduation:{color:"",prefix:"LOC:"}
+}
+
 
 # Example
 
