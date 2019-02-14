@@ -7,12 +7,24 @@ __                .__                        __
     \/          \/     \/            \/          \/
 ====================================================*/
 
-function codeLane(holder,width,height,data){
+function codeLane(holder,width,height,data,custom_options){
+
+var options = {
+  zoom:{enable:true,wedgeHeight:50,targetHeight:100},
+  marker:{size:10},
+  blade:{height:120,width:20,fontSize:11,fontFamily:"Ubuntu Condensed"},
+  lane:{width:20,trackColor:"",thickness:""},
+  graduation:{color:"",prefix:"LOC:"}
+}
+
+options = Object.assign(options, custom_options);
+
 var selection_wrapper;
 var zoomWedgeHeight = 50;
-var zoomHeight = 100;
+var zoomHeight = 400;
 var pointerLabel;
 var callBacks = {};
+var mouseLeft = false;
 //================ SET-UP CANVAS ====================
 var laneHolder = document.getElementById(holder);
 var canvas = document.createElement("canvas");
@@ -54,10 +66,10 @@ function prepareLane(){
   var lanes = data.lanes;
   for (var j = 0; j < lanes.length; j++) {
     var lane = new createjs.Container();
-    lane.x = 20+j*25;
+    lane.x = 20+(j*options.lane.width)+5;
     var path = new createjs.Shape();
-      path.graphics.clear().s("#F2F2F2").ss(1,"round").moveTo(laneWidth/2,0);
-      path.graphics.lineTo(laneWidth/2,laneHeight);
+      path.graphics.clear().s("#F2F2F2").ss(1,"round").moveTo(options.lane.width/2,0);
+      path.graphics.lineTo(options.lane.width/2,laneHeight);
       lane.addChild(path);
       stage.addChild(lane);
       renderMarkers(data.lanes[j],lane);
@@ -73,6 +85,7 @@ for (var i = 0; i < markers.length; i++) {
   markers[i]
   var marker_wrapper = new createjs.Container();
   marker_wrapper.y = markers[i].loc*locScale;
+  marker_wrapper.x = options.lane.width/2;
   marker_wrapper.data = {};
   marker_wrapper.data.originalY = marker_wrapper.y;
   markerGroup.push(marker_wrapper);
@@ -103,16 +116,16 @@ else{
 
 switch(marker.shape) {
     case "diamond":
-      holder.graphics.clear().s(strokeColor).ss(1,"round").beginFill(fillColor).drawPolyStar(10,0,5,4,0);
+      holder.graphics.clear().s(strokeColor).ss(1,"round").beginFill(fillColor).drawPolyStar(0,0,options.marker.size/2,4,0);
     break;
     case "hexagon":
-      holder.graphics.clear().s(strokeColor).ss(1,"round").beginFill(fillColor).drawPolyStar(10,0,5,6,0);
+      holder.graphics.clear().s(strokeColor).ss(1,"round").beginFill(fillColor).drawPolyStar(0,0,options.marker.size/2,6,0);
     break;
     case "square":
-      holder.graphics.clear().s(strokeColor).ss(1,"round").beginFill(fillColor).drawRect(6,0-4,8,8);
+      holder.graphics.clear().s(strokeColor).ss(1,"round").beginFill(fillColor).drawRect(-options.marker.size/2,0-options.marker.size/2,options.marker.size,options.marker.size);
     break;
     default:
-    holder.graphics.clear().s(strokeColor).ss(1,"round").beginFill(fillColor).drawPolyStar(10,0,5,3,0);
+    holder.graphics.clear().s(strokeColor).ss(1,"round").beginFill(fillColor).drawPolyStar(0,0,options.marker.size/2,3,0);
     }
 }
 
@@ -132,30 +145,48 @@ function renderSelection(){
        stage.addChild(selection_wrapper);
        stage.addEventListener("mouseleave", handleMouseLeave);
        stage.addEventListener("mouseenter", handleMouseEnter);
+
 }
 //==================== EVENTS =====================
 function handleMarkerHover(event){
    var data = event.target.data;
    drawMarker(event.target,data,true);
    var blade_wrapper = new createjs.Container();
-       blade_wrapper.y = 0;
+       blade_wrapper.y = -(options.blade.width - options.marker.size)/2 - options.marker.size/2;
+       blade_wrapper.x = - options.blade.width/2 ;
    var blade = new createjs.Shape();
-       blade.graphics.s(data.color.stroke).ss(1,"round").beginFill(data.color.fill).drawRoundRect(1,-10,18,120,2);
-   var label = new createjs.Text(data.label, "11px Ubuntu Condensed", data.color.stroke);
-       label.x = 15;
-       label.y = 10;
+       blade.graphics.s(data.color.stroke).ss(1,"round").beginFill(data.color.fill).drawRoundRect(0,0,options.blade.width,options.blade.height,2);
+   var label = new createjs.Text(data.label, options.blade.fontSize+"px "+options.blade.fontFamily, data.color.stroke);
+
+      var availabletextHeight = options.blade.height - (options.blade.width/2 +options.blade.fontSize/2) -(options.blade.width - options.blade.fontSize)/2 ;
+       label.x = options.blade.width/2 +options.blade.fontSize/2;
+       label.y = options.blade.width;
        label.rotation = 90;
-   var location = new createjs.Text(data.location, "11px Ubuntu Condensed", data.color.stroke);
+
+       var labelMask = new createjs.Shape();
+       labelMask.graphics.beginFill("blue").drawRect(0,options.blade.width,options.blade.width,(availabletextHeight*70/100));
+
+       labelMask.visible = false;
+       label.mask = labelMask;
+
+   var location = new createjs.Text(data.location, options.blade.fontSize+"px "+options.blade.fontFamily, data.color.stroke);
        location.textAlign = "right";
-       location.x = 15;
-       location.y = 120-10-5;
+       location.x = options.blade.width/2 +options.blade.fontSize/2;
+       location.y = options.blade.height-(options.blade.width - options.blade.fontSize)/2;
        location.rotation = 90;
+       if(label.getBounds().width> (availabletextHeight*70/100)){
+         var diff = label.getBounds().width - (availabletextHeight*70/100);
+         createjs.Tween.get(label,{loop:true}).to({ y: label.y-diff}, 3000, createjs.Ease.getPowInOut(2));
+       }
+
        blade_wrapper.addChild(blade);
        blade_wrapper.addChild(label);
+       blade_wrapper.addChild(labelMask);
        blade_wrapper.addChild(location);
-       if(height-event.target.parent.y < 120){
-         blade_wrapper.regX = +20;
+       if(height-event.target.parent.y < options.blade.height){
+         blade_wrapper.regX = options.blade.width;
          blade_wrapper.rotation = 180;
+         blade_wrapper.y = (options.blade.width - options.marker.size)/2 + options.marker.size/2
        }
        event.target.data.blade_wrapper = blade_wrapper;
        event.target.parent.addChild(blade_wrapper);
@@ -184,7 +215,8 @@ function handleMouseMove(event) {
     pointerY = height-(zoomWedgeHeight/2)-8
   }
   selection_wrapper.y = pointerY;
-  if(data.total_loc>height){
+
+  if(mouseLeft == false && options.zoom.enable){
 
   var ar1 = [0,mouseY-zoomWedgeHeight/2];
   var br1 = [mouseY-zoomWedgeHeight/2,mouseY+zoomWedgeHeight/2];
@@ -220,9 +252,17 @@ function convertToRange(or,nr,val) {
 }
 
 function handleMouseLeave(event) {
+  mouseLeft = true;
   selection_wrapper.alpha=0;
+  for (var k = 0; k < markerGroups.length; k++) {
+  var mg = markerGroups[k];
+  for (var l = 0; l < mg.length; l++) {
+      mg[l].y = mg[l].data.originalY;
+      }
+    }
 }
 function handleMouseEnter(event) {
+  mouseLeft = false;
   selection_wrapper.alpha=.75;
 }
 
