@@ -17,11 +17,10 @@ var options = {
   graduation:{color:"",prefix:"LOC:"}
 }
 
-options = Object.assign(options, custom_options);
-
-var selection_wrapper;
-var zoomWedgeHeight = 50;
-var zoomHeight = 400;
+options = mergeDeep(options, custom_options);
+var zoom_wrapper;
+var zoomWedgeHeight = options.zoom.wedgeHeight;
+var zoomHeight = options.zoom.targetHeight;
 var pointerLabel;
 var callBacks = {};
 var mouseLeft = false;
@@ -59,7 +58,7 @@ var stage = new createjs.Stage("lane_canvas");
 
 var laneWidth = 20;
 var laneHeight = height;
-  renderSelection();
+  renderZoom();
   prepareLane();
 
 function prepareLane(){
@@ -129,10 +128,10 @@ switch(marker.shape) {
     }
 }
 
-//================= RENDER SELECTION =============
-function renderSelection(){
-       selection_wrapper = new createjs.Container();
-       selection_wrapper.alpha=0;
+//================= RENDER ZOOM =============
+function renderZoom(){
+       zoom_wrapper = new createjs.Container();
+       zoom_wrapper.alpha=0;
    var selection = new createjs.Shape();
        selection.graphics.clear().s("#4A90E2").ss(1,"round").beginFill("#ECF3FC").drawRect(0,0,width,zoomWedgeHeight);
          pointer = new createjs.Shape();
@@ -141,8 +140,8 @@ function renderSelection(){
          pointerLabel = new createjs.Text("ggg", "11px Ubuntu Condensed", "#4A90E2");
          pointerLabel.x = 7;
          pointerLabel.y = (zoomWedgeHeight/2)-6;
-       selection_wrapper.addChild(pointer,pointerLabel);
-       stage.addChild(selection_wrapper);
+       zoom_wrapper.addChild(pointer,pointerLabel);
+       stage.addChild(zoom_wrapper);
        stage.addEventListener("mouseleave", handleMouseLeave);
        stage.addEventListener("mouseenter", handleMouseEnter);
 
@@ -214,7 +213,7 @@ function handleMouseMove(event) {
   else if(pointerY >height-(zoomWedgeHeight/2)-8){
     pointerY = height-(zoomWedgeHeight/2)-8
   }
-  selection_wrapper.y = pointerY;
+  zoom_wrapper.y = pointerY;
 
   if(mouseLeft == false && options.zoom.enable){
 
@@ -231,12 +230,15 @@ function handleMouseMove(event) {
   for (var i = 0; i < mg.length; i++) {
     if(mg[i].data.originalY <= mouseY-50){
       mg[i].y = convertToRange(ar1,ar2,mg[i].data.originalY);
+      //createjs.Tween.get(  mg[i]).to({ y: convertToRange(ar1,ar2,mg[i].data.originalY)}, 200, createjs.Ease.getPowInOut(2));
     }
     else if(mg[i].data.originalY > mouseY-50 && mg[i].data.originalY <= mouseY+50){
       mg[i].y = convertToRange(br1,br2,mg[i].data.originalY);
+      //createjs.Tween.get(  mg[i]).to({ y: convertToRange(br1,br2,mg[i].data.originalY)}, 200, createjs.Ease.getPowInOut(2));
     }
     else{
       mg[i].y = convertToRange(cr1,cr2,mg[i].data.originalY);
+      //createjs.Tween.get(  mg[i]).to({ y: convertToRange(cr1,cr2,mg[i].data.originalY)}, 200, createjs.Ease.getPowInOut(2));
     }
     }
     }
@@ -253,7 +255,7 @@ function convertToRange(or,nr,val) {
 
 function handleMouseLeave(event) {
   mouseLeft = true;
-  selection_wrapper.alpha=0;
+  zoom_wrapper.alpha=0;
   for (var k = 0; k < markerGroups.length; k++) {
   var mg = markerGroups[k];
   for (var l = 0; l < mg.length; l++) {
@@ -263,7 +265,7 @@ function handleMouseLeave(event) {
 }
 function handleMouseEnter(event) {
   mouseLeft = false;
-  selection_wrapper.alpha=.75;
+  zoom_wrapper.alpha=.75;
 }
 
 function handleMarkerClick(event){
@@ -273,19 +275,18 @@ function handleMarkerClick(event){
      var dummy_marker = new createjs.Shape();
      switch(event.target.data.shape) {
          case "diamond":
-           dummy_marker.graphics.clear().beginFill(fillColor).drawPolyStar(10,0,5,4,0);
+           dummy_marker.graphics.clear().beginFill(fillColor).drawPolyStar(0,0,options.marker.size/2,4,0);
          break;
          case "hexagon":
-           dummy_marker.graphics.clear().beginFill(fillColor).drawPolyStar(10,0,5,6,0);
+           dummy_marker.graphics.clear().beginFill(fillColor).drawPolyStar(0,0,options.marker.size/2,6,0);
          break;
          case "square":
-           dummy_marker.graphics.clear().beginFill(fillColor).drawRect(6,0-4,8,8);
+           dummy_marker.graphics.clear().beginFill(fillColor).drawRect(-options.marker.size/2,0-options.marker.size/2,options.marker.size,options.marker.size);
          break;
          default:
-         dummy_marker.graphics.clear().beginFill(fillColor).drawPolyStar(10,0,5,3,0);
+         dummy_marker.graphics.clear().beginFill(fillColor).drawPolyStar(0,0,options.marker.size/2,3,0);
          }
-         dummy_marker.regX = 10;
-         dummy_marker.x = 10;
+
          event.target.parent.addChild(dummy_marker);
          createjs.Tween.get(dummy_marker,{onComplete:function(){event.target.parent.removeChild(dummy_marker);}})
          .to({ alpha: 0,scale:4}, 300, createjs.Ease.getPowInOut(2));
@@ -295,6 +296,31 @@ return {
   onClick:function(callBack){
     callBacks.click = callBack;
   }
+}
+//==================== UTILITY ====================
+function mergeDeep(target, ...sources) {
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isObject(target) && isObject(source)) {
+    for (const key in source) {
+      if (isObject(source[key])) {
+        if (!target[key]) {
+          Object.assign(target, { [key]: {} });
+        }else{
+          target[key] = Object.assign({}, target[key])
+        }
+        mergeDeep(target[key], source[key]);
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return mergeDeep(target, ...sources);
+}
+function isObject(item) {
+  return (item && typeof item === 'object' && !Array.isArray(item));
 }
 //=== END OF COMPONENT ===
 }
