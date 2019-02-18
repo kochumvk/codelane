@@ -10,15 +10,15 @@ __                .__                        __
 function codeLane(holder,width,height,data,custom_options){
 
 var options = {
-  zoom:{enable:true,wedgeHeight:50,targetHeight:100},
+  zoom:{enable:true,mode:"manual",wedgeHeight:50,targetHeight:100,stroke:"rgba(74,144,226,.4)",fill:"rgba(74,144,226,.05)"},
   marker:{size:10},
   blade:{height:120,width:20,fontSize:11,fontFamily:"Ubuntu Condensed"},
   lane:{width:20,trackColor:"",thickness:""},
-  graduation:{color:"",prefix:"LOC:"}
+  graduation:{color:"",prefix:"LOC:",width:28}
 }
 
 options = mergeDeep(options, custom_options);
-var zoom_wrapper;
+var zoomControl;
 var zoomWedgeHeight = options.zoom.wedgeHeight;
 var zoomHeight = options.zoom.targetHeight;
 var pointerLabel;
@@ -56,7 +56,6 @@ var stage = new createjs.Stage("lane_canvas");
 // parameters later! Until then there will be magic
 // numbers.
 
-var laneWidth = 20;
 var laneHeight = height;
   renderZoom();
   prepareLane();
@@ -65,7 +64,7 @@ function prepareLane(){
   var lanes = data.lanes;
   for (var j = 0; j < lanes.length; j++) {
     var lane = new createjs.Container();
-    lane.x = 20+(j*options.lane.width)+5;
+    lane.x = options.graduation.width+(j*options.lane.width)+5;
     var path = new createjs.Shape();
       path.graphics.clear().s("#F2F2F2").ss(1,"round").moveTo(options.lane.width/2,0);
       path.graphics.lineTo(options.lane.width/2,laneHeight);
@@ -130,21 +129,56 @@ switch(marker.shape) {
 
 //================= RENDER ZOOM =============
 function renderZoom(){
-       zoom_wrapper = new createjs.Container();
-       zoom_wrapper.alpha=0;
-   var selection = new createjs.Shape();
-       selection.graphics.clear().s("#4A90E2").ss(1,"round").beginFill("#ECF3FC").drawRect(0,0,width,zoomWedgeHeight);
-         pointer = new createjs.Shape();
-         pointer.graphics.clear().s("#4A90E2").ss(1,"round").moveTo(0,zoomWedgeHeight/2);
-         pointer.graphics.lineTo(5,zoomWedgeHeight/2);
-         pointerLabel = new createjs.Text("ggg", "11px Ubuntu Condensed", "#4A90E2");
-         pointerLabel.x = 7;
-         pointerLabel.y = (zoomWedgeHeight/2)-6;
-       zoom_wrapper.addChild(pointer,pointerLabel);
-       stage.addChild(zoom_wrapper);
-       stage.addEventListener("mouseleave", handleMouseLeave);
-       stage.addEventListener("mouseenter", handleMouseEnter);
+   //     zoom_wrapper = new createjs.Container();
+   //     zoom_wrapper.alpha=0;
+   // var selection = new createjs.Shape();
+   //     selection.graphics.clear().s("#4A90E2").ss(1,"round").beginFill("#ECF3FC").drawRect(0,0,width,options.zoom.targetHeight);
+   //       pointer = new createjs.Shape();
+   //       pointer.graphics.clear().s("#4A90E2").ss(1,"round").moveTo(0,options.zoom.targetHeight/2);
+   //       pointer.graphics.lineTo(5,options.zoom.targetHeight/2);
+   //       pointerLabel = new createjs.Text("ggg", "11px Ubuntu Condensed", "#4A90E2");
+   //       pointerLabel.x = 7;
+   //       pointerLabel.y = (options.zoom.targetHeight/2)-6;
+   //     zoom_wrapper.addChild(selection,pointer,pointerLabel);
+   //     stage.addChild(zoom_wrapper);
+   //     stage.addEventListener("mouseleave", handleMouseLeave);
+   //     stage.addEventListener("mouseenter", handleMouseEnter);
 
+       zoomControl = new zoom();
+
+}
+
+function zoom(){
+        zoom_wrapper = new createjs.Container();
+        zoom_wrapper.alpha=0;
+    var wedge_base = new createjs.Shape();
+        wedge_base.graphics.s(options.zoom.stroke).ss(1,"round").beginFill(options.zoom.fill).drawRect(0,0,width,options.zoom.wedgeHeight);
+        wedge_base.y = options.zoom.targetHeight/2 - options.zoom.wedgeHeight/2;
+    var zoom_base = new createjs.Shape();
+        zoom_base.graphics.s(options.zoom.stroke).ss(1,"round").beginFill(options.zoom.fill).drawRect(0,0,width,options.zoom.targetHeight);
+    var zoom_margin = new createjs.Shape();
+        zoom_margin.graphics.beginFill(options.zoom.stroke).drawRect(0,0,options.graduation.width,options.zoom.targetHeight);
+    var pointer_label_start = new createjs.Text("", "11px Ubuntu Condensed", "white");
+        pointer_label_start.x = pointer_label_start.y = 2;
+    var pointer_label_end = new createjs.Text("", "11px Ubuntu Condensed", "white");
+        pointer_label_end.x = 2;
+        pointer_label_end.y = options.zoom.targetHeight - 13;
+     zoom_wrapper.addChild(zoom_base,zoom_margin,pointer_label_start,pointer_label_end);
+     stage.addChild(zoom_wrapper);
+     stage.addEventListener("mouseleave", handleMouseLeave);
+     stage.addEventListener("mouseenter", handleMouseEnter);
+
+     return {
+       setY:function(currentY){
+         zoom_wrapper.y = currentY;
+         pointer_label_start.text = parseInt(currentY / locScale);
+         pointer_label_end.text = parseInt((currentY / locScale)+(options.zoom.wedgeHeight/locScale));
+       },
+       setAlpha:function(alpha){
+         zoom_wrapper.alpha = alpha;
+       }
+
+     }
 }
 //==================== EVENTS =====================
 function handleMarkerHover(event){
@@ -204,41 +238,38 @@ function handleMarkerOut(event){
 }
 
 function handleMouseMove(event) {
-  pointerLabel.text = parseInt((stage.mouseY/window.devicePixelRatio)/locScale);
+  //pointerLabel.text = parseInt((stage.mouseY/window.devicePixelRatio)/locScale);
   var mouseY = stage.mouseY/window.devicePixelRatio;
-  var pointerY = mouseY-zoomWedgeHeight/2 ;
-  if(pointerY <-(zoomWedgeHeight/2)+8){
-    pointerY = -(zoomWedgeHeight/2)+8;
+  var pointerY = mouseY-options.zoom.targetHeight/2 ;
+  if(pointerY <-(options.zoom.targetHeight/2)+8){
+    pointerY = -(options.zoom.targetHeight/2)+8;
   }
-  else if(pointerY >height-(zoomWedgeHeight/2)-8){
-    pointerY = height-(zoomWedgeHeight/2)-8
+  else if(pointerY >height-(options.zoom.targetHeight/2)-8){
+    pointerY = height-(options.zoom.targetHeight/2)-8
   }
-  zoom_wrapper.y = pointerY;
+  zoomControl.setY(pointerY);
 
   if(mouseLeft == false && options.zoom.enable){
 
-  var ar1 = [0,mouseY-zoomWedgeHeight/2];
-  var br1 = [mouseY-zoomWedgeHeight/2,mouseY+zoomWedgeHeight/2];
-  var cr1 = [mouseY+zoomWedgeHeight/2,height];
+  var ar1 = [0,mouseY-options.zoom.wedgeHeight/2];
+  var br1 = [mouseY-options.zoom.wedgeHeight/2,mouseY+options.zoom.wedgeHeight/2];
+  var cr1 = [mouseY+options.zoom.wedgeHeight/2,height];
 
-  var ar2 = [0,mouseY-zoomHeight/2];
-  var br2 = [mouseY-zoomHeight/2,mouseY+zoomHeight/2];
-  var cr2 = [mouseY+zoomHeight/2,height];
+  var ar2 = [0,mouseY-options.zoom.targetHeight/2];
+  var br2 = [mouseY-options.zoom.targetHeight/2,mouseY+options.zoom.targetHeight/2];
+  var cr2 = [mouseY+options.zoom.targetHeight/2,height];
 
   for (var j = 0; j < markerGroups.length; j++) {
   var mg = markerGroups[j];
   for (var i = 0; i < mg.length; i++) {
-    if(mg[i].data.originalY <= mouseY-50){
+    if(mg[i].data.originalY <= mouseY-options.zoom.wedgeHeight/2){
       mg[i].y = convertToRange(ar1,ar2,mg[i].data.originalY);
-      //createjs.Tween.get(  mg[i]).to({ y: convertToRange(ar1,ar2,mg[i].data.originalY)}, 200, createjs.Ease.getPowInOut(2));
     }
-    else if(mg[i].data.originalY > mouseY-50 && mg[i].data.originalY <= mouseY+50){
+    else if(mg[i].data.originalY > mouseY-options.zoom.wedgeHeight/2 && mg[i].data.originalY <= mouseY+options.zoom.wedgeHeight/2){
       mg[i].y = convertToRange(br1,br2,mg[i].data.originalY);
-      //createjs.Tween.get(  mg[i]).to({ y: convertToRange(br1,br2,mg[i].data.originalY)}, 200, createjs.Ease.getPowInOut(2));
     }
     else{
       mg[i].y = convertToRange(cr1,cr2,mg[i].data.originalY);
-      //createjs.Tween.get(  mg[i]).to({ y: convertToRange(cr1,cr2,mg[i].data.originalY)}, 200, createjs.Ease.getPowInOut(2));
     }
     }
     }
@@ -255,7 +286,7 @@ function convertToRange(or,nr,val) {
 
 function handleMouseLeave(event) {
   mouseLeft = true;
-  zoom_wrapper.alpha=0;
+  zoomControl.setAlpha(0);
   for (var k = 0; k < markerGroups.length; k++) {
   var mg = markerGroups[k];
   for (var l = 0; l < mg.length; l++) {
@@ -265,7 +296,7 @@ function handleMouseLeave(event) {
 }
 function handleMouseEnter(event) {
   mouseLeft = false;
-  zoom_wrapper.alpha=.75;
+  zoomControl.setAlpha(1);
 }
 
 function handleMarkerClick(event){
