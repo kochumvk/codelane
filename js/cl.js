@@ -10,9 +10,9 @@ __                .__                        __
 function codeLane(holder,width,height,data,custom_options){
 
 var options = {
-  zoom:{enable:true,mode:"manual",wedgeHeight:50,targetHeight:100,stroke:"rgba(74,144,226,.4)",fill:"rgba(74,144,226,.05)"},
+  zoom:{enable:true,mode:"manual",width:100,wedgeHeight:50,targetHeight:100,stroke:"rgba(74,144,226,.4)",fill:"rgba(74,144,226,.05)",text:"rgba(74,144,226,1)"},
   marker:{size:10},
-  blade:{height:120,width:20,fontSize:11,fontFamily:"Ubuntu Condensed"},
+  blade:{height:120,width:20,angle:"vertical",fontSize:11,fontFamily:"Ubuntu Condensed"},
   lane:{width:20,trackColor:"",thickness:""},
   graduation:{color:"",prefix:"LOC:",width:28}
 }
@@ -152,10 +152,11 @@ function zoom(){
         zoom_wrapper = new createjs.Container();
         zoom_wrapper.alpha=0;
     var wedge_base = new createjs.Shape();
-        wedge_base.graphics.s(options.zoom.stroke).ss(1,"round").beginFill(options.zoom.fill).drawRect(0,0,width,options.zoom.wedgeHeight);
+    //options.graduation.width+10+(options.lane.width*data.lanes.length)
+        wedge_base.graphics.s(options.zoom.stroke).ss(1,"round").beginFill(options.zoom.fill).drawRect(0,0,options.zoom.width,options.zoom.wedgeHeight);
         wedge_base.y = options.zoom.targetHeight/2 - options.zoom.wedgeHeight/2;
     var zoom_base = new createjs.Shape();
-        zoom_base.graphics.s(options.zoom.stroke).ss(1,"round").beginFill(options.zoom.fill).drawRect(0,0,width,options.zoom.targetHeight);
+        zoom_base.graphics.s(options.zoom.stroke).ss(1,"round").beginFill(options.zoom.fill).drawRect(0,0,options.zoom.width,options.zoom.targetHeight);
     var zoom_margin = new createjs.Shape();
         zoom_margin.graphics.beginFill(options.zoom.stroke).drawRect(0,0,options.graduation.width,options.zoom.targetHeight);
     var pointer_label_start = new createjs.Text("", "11px Ubuntu Condensed", "white");
@@ -163,16 +164,29 @@ function zoom(){
     var pointer_label_end = new createjs.Text("", "11px Ubuntu Condensed", "white");
         pointer_label_end.x = 2;
         pointer_label_end.y = options.zoom.targetHeight - 13;
-     zoom_wrapper.addChild(zoom_base,zoom_margin,pointer_label_start,pointer_label_end);
+
+        pointer = new createjs.Shape();
+        pointer.graphics.clear().s(options.zoom.text).ss(1,"round").moveTo(0,options.zoom.targetHeight/2);
+        pointer.graphics.lineTo(5,options.zoom.targetHeight/2);
+        pointer_label_mid = new createjs.Text("", "11px Ubuntu Condensed", options.zoom.text);
+        pointer_label_mid.x = 7;
+        pointer_label_mid.y = (options.zoom.targetHeight/2)-6;
+
+
+     //zoom_wrapper.addChild(zoom_base,zoom_margin,pointer_label_start,pointer_label_end);
+     zoom_wrapper.addChild(zoom_base,pointer,pointer_label_mid);
+
      stage.addChild(zoom_wrapper);
      stage.addEventListener("mouseleave", handleMouseLeave);
      stage.addEventListener("mouseenter", handleMouseEnter);
 
      return {
        setY:function(currentY){
-         zoom_wrapper.y = currentY;
-         pointer_label_start.text = parseInt(currentY / locScale);
+         zoom_wrapper.y = currentY-(options.zoom.targetHeight/2);
+         var x = parseInt((stage.mouseY/window.devicePixelRatio)/locScale);
+         pointer_label_start.text = parseInt((currentY / locScale)-(options.zoom.wedgeHeight/locScale));
          pointer_label_end.text = parseInt((currentY / locScale)+(options.zoom.wedgeHeight/locScale));
+         pointer_label_mid.text = parseInt((currentY / locScale));
        },
        setAlpha:function(alpha){
          zoom_wrapper.alpha = alpha;
@@ -185,6 +199,9 @@ function handleMarkerHover(event){
    var data = event.target.data;
    drawMarker(event.target,data,true);
    var blade_wrapper = new createjs.Container();
+
+
+
        blade_wrapper.y = -(options.blade.width - options.marker.size)/2 - options.marker.size/2;
        blade_wrapper.x = - options.blade.width/2 ;
    var blade = new createjs.Shape();
@@ -216,17 +233,24 @@ function handleMarkerHover(event){
        blade_wrapper.addChild(label);
        blade_wrapper.addChild(labelMask);
        blade_wrapper.addChild(location);
-       if(height-event.target.parent.y < options.blade.height){
-         blade_wrapper.regX = options.blade.width;
-         blade_wrapper.rotation = 180;
-         blade_wrapper.y = (options.blade.width - options.marker.size)/2 + options.marker.size/2
+       if(options.blade.angle == "horizontal"){
+         blade_wrapper.regX  = options.blade.width;
+         blade_wrapper.rotation = 270;
+       }else{
+         if(height-event.target.parent.y < options.blade.height){
+           blade_wrapper.regX = options.blade.width;
+           blade_wrapper.rotation = 180;
+           blade_wrapper.y = (options.blade.width - options.marker.size)/2 + options.marker.size/2
+         }
        }
+
        event.target.data.blade_wrapper = blade_wrapper;
        event.target.parent.addChild(blade_wrapper);
        event.target.parent.parent.addChild(event.target.parent);
        blade_wrapper.alpha=0;
        createjs.Tween.get(blade_wrapper).to({ alpha: 1}, 300, createjs.Ease.getPowInOut(2));
        event.target.parent.swapChildren( event.target, blade_wrapper);
+       event.target.parent.parent.parent.setChildIndex(event.target.parent.parent,event.target.parent.parent.parent.numChildren-1);
        stage.update();
 }
 
@@ -247,7 +271,8 @@ function handleMouseMove(event) {
   else if(pointerY >height-(options.zoom.targetHeight/2)-8){
     pointerY = height-(options.zoom.targetHeight/2)-8
   }
-  zoomControl.setY(pointerY);
+
+  zoomControl.setY(mouseY);
 
   if(mouseLeft == false && options.zoom.enable){
 
@@ -264,12 +289,15 @@ function handleMouseMove(event) {
   for (var i = 0; i < mg.length; i++) {
     if(mg[i].data.originalY <= mouseY-options.zoom.wedgeHeight/2){
       mg[i].y = convertToRange(ar1,ar2,mg[i].data.originalY);
+      mg[i].scale = 1;
     }
     else if(mg[i].data.originalY > mouseY-options.zoom.wedgeHeight/2 && mg[i].data.originalY <= mouseY+options.zoom.wedgeHeight/2){
       mg[i].y = convertToRange(br1,br2,mg[i].data.originalY);
+      mg[i].scale = 1;
     }
     else{
       mg[i].y = convertToRange(cr1,cr2,mg[i].data.originalY);
+      mg[i].scale = 1;
     }
     }
     }
