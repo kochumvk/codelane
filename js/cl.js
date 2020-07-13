@@ -7,6 +7,12 @@ __                .__                        __
     \/          \/     \/            \/          \/
 ====================================================*/
 
+
+function test(){
+    var x = 5;
+}
+
+
 function codeLane(holder,width,height,data,custom_options){
 
 var options = {
