@@ -9,7 +9,27 @@ __                .__                        __
 
 
 function test(){
-    var x = 5;
+    var error_counter = 5;
+    
+     var $temp = $("<input>");
+      $("body").append($temp);
+      $temp.val(element).select();
+      document.execCommand("copy");
+      $temp.remove();
+    
+}
+
+function Method1(a: string, b: number) {
+  switch (a) {
+    case 0:
+      switch (b) {  // nested switch voilation
+        // ...
+      }
+    case 1:
+      // ...
+    default:
+      // ...
+  }
 }
 
 
