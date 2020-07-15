@@ -9,31 +9,6 @@ __                .__                        __
 
 function codeLane(holder,width,height,data,custom_options){
     
-    function test(){
-	    var error_counter = 5;
-	    
-	     var $temp = $("<input>");
-	      $("body").append($temp);
-	      $temp.val(element).select();
-	      document.execCommand("copy");
-	      $temp.remove();
-	    
-	}
-	
-
-	function Method1(a: string, b: number) {
-	  switch (a) {
-	    case 0:
-	      switch (b) {  // nested switch voilation
-	        // ...
-	      }
-	    case 1:
-	      // ...
-	    default:
-	      // ...
-	  }
-	}
-
 
 var options = {
   zoom:{enable:true,mode:"manual",width:100,wedgeHeight:50,targetHeight:100,stroke:"rgba(74,144,226,.4)",fill:"rgba(74,144,226,.05)",text:"rgba(74,144,226,1)"},
