@@ -73,5 +73,10 @@ function init() {
     zoom:{enable:true},
     blade:{height:150,width:20,fontSize:13,fontFamily:"Ubuntu Condensed"},
   });
-  cl.onClick(function (loc) {console.log("Navigate code to :"+loc) });
+}
+
+function demo(){
+  var stuff =15;
+  stuff ="";
+  
 }
