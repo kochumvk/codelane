@@ -8,6 +8,7 @@ __                .__                        __
 ====================================================*/
 
 function codeLane(holder,width,height,data,custom_options){
+    
 
     
 var options = {
