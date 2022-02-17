@@ -413,24 +413,9 @@ function isObject(item) {
 
 //---------------------Issue 1
 
-function Method1(a: string, b: number) {
-  switch (a) {
-    case 0:
-      switch (b) {  // nested switch voilation
-        // ...
-      }
-    case 1:
-      // ...
-    default:
-      // ...
-  }
-}
+
 
 //---------------------Issue 2
-
-function somePromise() {
-  return Promise.reject("rejected");
-}
 
 //---------------------Issue 3
 function copyToClipboard(element) {
